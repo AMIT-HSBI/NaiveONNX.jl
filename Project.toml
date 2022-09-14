@@ -1,0 +1,14 @@
+name = "NaiveONNX"
+uuid = "135c1d4d-7f3e-476b-9774-5f1a5fa3495d"
+authors = ["AnHeuermann <andreas.heuermann@fh-bielefeld.de>"]
+version = "0.1.0"
+
+[deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+ONNX = "d0dd6a25-fac6-55c0-abf7-829e0c774d20"
+ONNXNaiveNASflux = "2e935253-ba83-4645-9154-13ffeb13a688"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
