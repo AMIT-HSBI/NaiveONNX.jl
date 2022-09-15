@@ -152,7 +152,7 @@ end
 """
 Array of two inputs to plot against one output.
 """
-function visualizeData3D(data::InOutData, inputNames::Array{String}, outputNames::Array{String}, inidx::Array{Tuple{I,I}}, outidx::Array{I}) where I<:Integer
+function visualizeData3D(data::InOutData, inputNames::Array{String}, outputNames::Array{String}, inidx::Array{Tuple{I,I}}, outidx) where I<:Integer
   @assert length(inidx) == length(outidx) "Length of inidx not equal length of outidx"
   p = []
 
