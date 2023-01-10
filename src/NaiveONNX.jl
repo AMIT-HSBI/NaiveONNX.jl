@@ -1,5 +1,6 @@
 module NaiveONNX
 
+import CUDA
 import CSV
 import DataFrames
 import Flux

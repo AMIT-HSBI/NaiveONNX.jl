@@ -25,14 +25,14 @@ Filter training data to only contain unambiguous data points
 by using only the bottom right intersection points.
 """
 function filterData(data_in, data_out)
-  s = [x[2] for x in data_in];
-  r = [x[2] for x in data_in];
-  y = [x[1] for x in data_out];
+  s = data_in[1,:]
+  r = data_in[2,:]
+  y = data_out[1,:]
 
   keep = findall(i->(i==true), isRight.(s, r, y))
 
-  filtered_data_in = data_in[keep]
-  filtered_data_out = data_out[keep]
+  filtered_data_in = data_in[:, keep]
+  filtered_data_out = data_out[:, keep]
   return (filtered_data_in, filtered_data_out)
 end
 
