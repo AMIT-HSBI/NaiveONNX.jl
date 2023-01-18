@@ -35,8 +35,20 @@ Read CSV data and return training and testing data.
               Defaults to 80% training and 20% testing.
   - `shuffle::Bool=true`: Shufle training and testing from data.
 """
-function readData(filename::String, nInputs::Integer; ratio=0.8, shuffle::Bool=true)::Data
-  df = CSV.read(filename, DataFrames.DataFrame)
+function readData(filename::String,
+                  inputNames::Array{String},
+                  outputNames::Array{String};
+                  ratio=0.8,
+                  shuffle::Bool=true)::Data
+
+  df = CSV.read(filename, DataFrames.DataFrame; ntasks=1)
+
+  # Assert data is in expected order
+  if names(df) != vcat(inputNames, outputNames)
+    throw("Order of CSV file columns doesn't match given input/output variables.")
+  end
+  nInputs = length(inputNames)
+
   M = transpose(Matrix{Float32}(df))
   n_samples = size(M,2)
   n_train = Integer(round(n_samples*ratio))
@@ -131,9 +143,18 @@ end
 """
 Train model on CSV data and export to ONNX.
 """
-function trainONNX(csvFile::String, onnxModel::String, nInputs::Integer; filterFunc=nothing, model=nothing, losstol::Real=1e-6, nepochs=10)
-  data = readData(csvFile, nInputs)
-  nOutputs = size(data.train.output,1)
+function trainONNX(csvFile::String,
+                   onnxModel::String,
+                   inputNames::Array{String},
+                   outputNames::Array{String};
+                   filterFunc=nothing,
+                   model=nothing,
+                   losstol::Real=1e-6,
+                   nepochs=10)
+
+  data = readData(csvFile, inputNames, outputNames)
+  nInputs = length(inputNames)
+  nOutputs = length(outputNames)
 
   if filterFunc !== nothing
     data = Data(filterFunc(data.train.input, data.train.output),
@@ -150,8 +171,10 @@ function trainONNX(csvFile::String, onnxModel::String, nInputs::Integer; filterF
   model = trainSurrogate!(model, data.train; losstol=losstol, nepochs=nepochs, useGPU=true)
 
   mkpath(dirname(onnxModel))
+  BSON.@save onnxModel*".bson" model
   ONNXNaiveNASflux.save(onnxModel, model, (nInputs,1))
-  return onnxModel
+
+  return model
 end
 
 

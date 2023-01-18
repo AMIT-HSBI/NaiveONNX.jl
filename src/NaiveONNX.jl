@@ -1,5 +1,6 @@
 module NaiveONNX
 
+import BSON
 import CUDA
 import CSV
 import DataFrames
