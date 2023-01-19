@@ -5,9 +5,11 @@ using NaiveONNX
   csvFile = abspath(joinpath(@__DIR__, "csv", "eq_928.csv"))
   onnxModel = abspath(joinpath(@__DIR__, "onnx", "eq_928.onnx"))
   rm(onnxModel, force=true)
-  nInputs = 1
+  inputNames = ["scalableModelicaModel.simpleSpring[7].s_rel"]
+  outputNames = ["scalableModelicaModel.springChain[6].spring[1].s_rel", "scalableModelicaModel.springChain[6].spring[4].s_rel", "scalableModelicaModel.springChain[6].spring[3].s_rel", "scalableModelicaModel.springChain[6].spring[2].s_rel", "scalableModelicaModel.springChain[6].spring[4].f"]
 
-  trainONNX(csvFile, onnxModel, nInputs; nepochs=2)
+
+  trainONNX(csvFile, onnxModel, inputNames, outputNames; nepochs=2)
   @test isfile(onnxModel)
   rm(onnxModel, force=true)
 end
@@ -39,9 +41,10 @@ end
 @testset "simpleLoop_eq14" begin
   csvFile = abspath(joinpath(@__DIR__, "csv", "simpleLoop_eq14.csv"))
   onnxModel = abspath(joinpath(@__DIR__, "onnx", "simpleLoop_eq14.onnx"))
-  nInputs = 2
+  inputNames = ["s", "r"]
+  outputNames = ["y"]
 
-  trainONNX(csvFile, onnxModel, nInputs; filterFunc=filterData, nepochs=10)
+  trainONNX(csvFile, onnxModel, inputNames, outputNames; filterFunc=filterData, nepochs=10)
   @test isfile(onnxModel)
   rm(onnxModel, force=true)
 end

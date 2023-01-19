@@ -22,13 +22,14 @@ struct Data
 end
 
 """
-    readData(filename, nInputs; ratio=0.8)
+    readData(filename, inputNames, outputNames; ratio=0.8)
 
 Read CSV data and return training and testing data.
 
 # Arguments
-  - `filename::String`: Path of CSV file with training data.
-  - `nInputs::Integer`: Number of input varaibles for model.
+  - `filename::String`:           Path of CSV file with training data.
+  - `inputNames::Array{String}`:  Array with model input names.
+  - `outputNames::Array{String}`:  Array with model output names.
 
 # Keywords
   - `ratio=0.8`: Ratio between training and testing data points.
