@@ -106,7 +106,7 @@ function trainSurrogate!(model_cpu,
   end
   parameters = Flux.params(model)
 
-  initialLoss = sum([lossFunc(model_cpu(trainData.input[:,i]), trainData.output[:,i]) for i in 1:nInputs]) / size(trainData.input,2)
+  initialLoss = sum([lossFunc(model_cpu(trainData.input[:,i]), trainData.output[:,i]) for i in 1:size(trainData.input,2)]) / size(trainData.input,2)
   @info "Initial loss: $(initialLoss)"
 
   for epoch in 1:nepochs
@@ -118,7 +118,7 @@ function trainSurrogate!(model_cpu,
       end
 
       model_cpu = Flux.cpu(model)
-      l = sum([lossFunc(model_cpu(trainData.input[:,i]), trainData.output[:,i]) for i in 1:nInputs]) / size(trainData.input,2)
+      l = sum([lossFunc(model_cpu(trainData.input[:,i]), trainData.output[:,i]) for i in 1:size(trainData.input,2)]) / size(trainData.input,2)
       @info "Epoch $(epoch): Train loss=$(l)"
       if l < losstol
         break
@@ -129,7 +129,7 @@ function trainSurrogate!(model_cpu,
         Flux.Optimise.update!(opt, parameters, gradients)
       end
 
-      l = sum([lossFunc(model(trainData.input[:,i]), trainData.output[:,i]) for i in 1:nInputs]) / size(trainData.input,2)
+      l = sum([lossFunc(model(trainData.input[:,i]), trainData.output[:,i]) for i in 1:size(trainData.input,2)]) / size(trainData.input,2)
       @info "Epoch $(epoch): Train loss=$(l)"
       if l < losstol
         break
