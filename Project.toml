@@ -1,7 +1,7 @@
 name = "NaiveONNX"
 uuid = "135c1d4d-7f3e-476b-9774-5f1a5fa3495d"
 authors = ["AnHeuermann <andreas.heuermann@fh-bielefeld.de>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
@@ -18,3 +18,4 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
 Cbc = "1.0.3"
+ONNXNaiveNASflux = "0.2.6"
