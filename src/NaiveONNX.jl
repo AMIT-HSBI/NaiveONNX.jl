@@ -1,10 +1,11 @@
 module NaiveONNX
 
 import BSON
-import CUDA
 import CSV
+import CUDA
 import DataFrames
 import Flux
+import InvertedIndices
 import ONNX
 import ONNXNaiveNASflux
 import Plots

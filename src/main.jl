@@ -44,9 +44,14 @@ function readData(filename::String,
 
   df = CSV.read(filename, DataFrames.DataFrame; ntasks=1)
 
+  # Ignore column "Trace"
+  if "Trace" in names(df)
+    DataFrames.select!(df, InvertedIndices.Not(:Trace))
+  end
   # Assert data is in expected order
   if names(df) != vcat(inputNames, outputNames)
-    throw("Order of CSV file columns doesn't match given input/output variables.")
+    @info "inputNames; outputNames: $(vcat(inputNames, outputNames))"
+    throw("Order of columns doesn't match given input/output variables in CSV file `$(filename)`.")
   end
   nInputs = length(inputNames)
 
