@@ -4,13 +4,15 @@ using NaiveONNX
 @testset "eq_928" begin
   csvFile = abspath(joinpath(@__DIR__, "csv", "eq_928.csv"))
   onnxModel = abspath(joinpath(@__DIR__, "onnx", "eq_928.onnx"))
+  lossFile = abspath(joinpath(@__DIR__, "onnx", "eq_928_loss.csv"))
   rm(onnxModel, force=true)
+  rm(lossFile, force=true)
   inputNames = ["scalableModelicaModel.simpleSpring[7].s_rel"]
   outputNames = ["scalableModelicaModel.springChain[6].spring[1].s_rel", "scalableModelicaModel.springChain[6].spring[4].s_rel", "scalableModelicaModel.springChain[6].spring[3].s_rel", "scalableModelicaModel.springChain[6].spring[2].s_rel", "scalableModelicaModel.springChain[6].spring[4].f"]
 
-
-  trainONNX(csvFile, onnxModel, inputNames, outputNames; nepochs=2)
+  trainONNX(csvFile, onnxModel, inputNames, outputNames; lossFile=lossFile, nepochs=2)
   @test isfile(onnxModel)
+  @test isfile(lossFile)
   rm(onnxModel, force=true)
 end
 

@@ -83,19 +83,24 @@ Stop when `losstol` or maximum number of epochs `nepochs` is reached.
 # Arguments
   - `model`: Flux model to train.
   - `trainData::InOutData`: Train input and output data used for computing mean loss over total train set.
+  - `testData::InOutData`:  Test input and output data used for computing mean loss over total test set.
 
 # Keywords
-  - `losstol::Real=1e-6`: Loss to reach for model.
-  - `nepochs::Integer=10`: Number of epochs to train.
-  - `eta::Real=1e-3`: η parameter for Flux.ADAM.
-  - `useGPU`: If true use GPU to train ANN, otherwise use CPU.
+  - `losstol::Real=1e-6`:   Loss to reach for model.
+  - `nepochs::Integer=10`:  Number of epochs to train.
+  - `eta::Real=1e-3`:       η parameter for Flux.ADAM.
+  - `useGPU`:               If true use GPU to train ANN, otherwise use CPU.
 """
 function trainSurrogate!(model_cpu,
-                         trainData::InOutData;
+                         trainData::InOutData,
+                         testData::InOutData;
                          losstol::Real = 1e-6,
                          nepochs::Integer = 10,
                          eta::Real = 1e-3,
                          useGPU::Bool = true)
+
+  # Log file for loss
+  df_loss = DataFrames.DataFrame(epoch = Int64[], lossTrain = Float64[], lossTest = Float64[])
 
   dataloader = Flux.DataLoader((trainData.input, trainData.output), batchsize=64, shuffle=true)
   nInputs = size(trainData.input,1)
@@ -123,9 +128,11 @@ function trainSurrogate!(model_cpu,
       end
 
       model_cpu = Flux.cpu(model)
-      l = sum([lossFunc(model_cpu(trainData.input[:,i]), trainData.output[:,i]) for i in 1:size(trainData.input,2)]) / size(trainData.input,2)
-      @info "Epoch $(epoch): Train loss=$(l)"
-      if l < losstol
+      l_train = sum([lossFunc(model_cpu(trainData.input[:,i]), trainData.output[:,i]) for i in 1:size(trainData.input,2)]) / size(trainData.input,2)
+      l_test = sum([lossFunc(model_cpu(testData.input[:,i]), testData.output[:,i]) for i in 1:size(testData.input,2)]) / size(testData.input,2)
+      @info "Epoch $(epoch): Train loss=$(l_train), Test loss=$(l_test)"
+      push!(df_loss, [epoch, l_train, l_test])
+      if l_train < losstol
         break
       end
     else
@@ -134,15 +141,17 @@ function trainSurrogate!(model_cpu,
         Flux.Optimise.update!(opt, parameters, gradients)
       end
 
-      l = sum([lossFunc(model(trainData.input[:,i]), trainData.output[:,i]) for i in 1:size(trainData.input,2)]) / size(trainData.input,2)
-      @info "Epoch $(epoch): Train loss=$(l)"
-      if l < losstol
+      l_train = sum([lossFunc(model(trainData.input[:,i]), trainData.output[:,i]) for i in 1:size(trainData.input,2)]) / size(trainData.input,2)
+      l_test = sum([lossFunc(model(testData.input[:,i]), testData.output[:,i]) for i in 1:size(testData.input,2)]) / size(testData.input,2)
+      @info "Epoch $(epoch): Train loss=$(l_train), Test loss=$(l_test)"
+      push!(df_loss, [epoch, l_train, l_test])
+      if l_train < losstol
         break
       end
     end
   end
 
-  return Flux.cpu(model)
+  return Flux.cpu(model), df_loss
 end
 
 
@@ -153,6 +162,7 @@ function trainONNX(csvFile::String,
                    onnxModel::String,
                    inputNames::Array{String},
                    outputNames::Array{String};
+                   lossFile::String="",
                    filterFunc=nothing,
                    model=nothing,
                    losstol::Real=1e-6,
@@ -174,11 +184,15 @@ function trainONNX(csvFile::String,
                      Flux.Dense(nOutputs*10, nOutputs))
   end
 
-  model = trainSurrogate!(model, data.train; losstol=losstol, nepochs=nepochs, useGPU=true)
+  model, df_loss = trainSurrogate!(model, data.train, data.test; losstol=losstol, nepochs=nepochs, useGPU=true)
 
   mkpath(dirname(onnxModel))
   BSON.@save onnxModel*".bson" model
   ONNXNaiveNASflux.save(onnxModel, model, (nInputs,1))
+
+  if lossFile != ""
+    CSV.write(lossFile, df_loss)
+  end
 
   return model
 end
