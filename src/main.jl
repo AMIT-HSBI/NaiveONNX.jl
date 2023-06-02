@@ -37,12 +37,22 @@ Read CSV data and return training and testing data.
   - `shuffle::Bool=true`: Shufle training and testing from data.
 """
 function readData(filename::String,
-                  inputNames::Array{String},
-                  outputNames::Array{String};
-                  ratio=0.8,
-                  shuffle::Bool=true)::Data
+  inputNames::Array{String},
+  outputNames::Array{String};
+  ratio=0.8,
+  shuffle::Bool=true)::Data
 
   df = CSV.read(filename, DataFrames.DataFrame; ntasks=1)
+  return prepareData(df, inputNames, outputNames; ratio=ratio, shuffle=shuffle)
+end
+
+function prepareData(
+  df::DataFrames.DataFrame,
+  inputNames::Array{String},
+  outputNames::Array{String};
+  ratio=0.8,
+  shuffle::Bool=true
+)::Data
 
   # Ignore column "Trace"
   if "Trace" in names(df)
@@ -56,19 +66,19 @@ function readData(filename::String,
   nInputs = length(inputNames)
 
   M = transpose(Matrix{Float32}(df))
-  n_samples = size(M,2)
-  n_train = Integer(round(n_samples*ratio))
+  n_samples = size(M, 2)
+  n_train = Integer(round(n_samples * ratio))
   if shuffle
-    trainIters = StatsBase.sample(1:n_samples, n_train, replace = false)
+    trainIters = StatsBase.sample(1:n_samples, n_train, replace=false)
   else
     trainIters = 1:n_train
   end
   testIters = setdiff(1:n_samples, trainIters)
 
-  train_in  = M[1:nInputs, trainIters]
+  train_in = M[1:nInputs, trainIters]
   train_out = M[nInputs+1:end, trainIters]
-  test_in   = M[1:nInputs, testIters]
-  test_out  = M[nInputs+1:end, testIters]
+  test_in = M[1:nInputs, testIters]
+  test_out = M[nInputs+1:end, testIters]
 
   return Data(train_in, train_out, test_in, test_out, names(df)[1:nInputs], names(df)[nInputs+1:end])
 end
@@ -92,18 +102,17 @@ Stop when `losstol` or maximum number of epochs `nepochs` is reached.
   - `useGPU`:               If true use GPU to train ANN, otherwise use CPU.
 """
 function trainSurrogate!(model_cpu,
-                         trainData::InOutData,
-                         testData::InOutData;
-                         losstol::Real = 1e-6,
-                         nepochs::Integer = 10,
-                         eta::Real = 1e-3,
-                         useGPU::Bool = true)
+  trainData::InOutData,
+  testData::InOutData;
+  losstol::Real=1e-6,
+  nepochs::Integer=10,
+  eta::Real=1e-3,
+  useGPU::Bool=true)
 
   # Log file for loss
-  df_loss = DataFrames.DataFrame(epoch = Int64[], lossTrain = Float64[], lossTest = Float64[])
+  df_loss = DataFrames.DataFrame(epoch=Int64[], lossTrain=Float64[], lossTest=Float64[])
 
   dataloader = Flux.DataLoader((trainData.input, trainData.output), batchsize=64, shuffle=true)
-  nInputs = size(trainData.input,1)
 
   opt = Flux.Adam(eta)
   lossFunc = Flux.Losses.mse
@@ -116,7 +125,7 @@ function trainSurrogate!(model_cpu,
   end
   parameters = Flux.params(model)
 
-  initialLoss = sum([lossFunc(model_cpu(trainData.input[:,i]), trainData.output[:,i]) for i in 1:size(trainData.input,2)]) / size(trainData.input,2)
+  initialLoss = sum([lossFunc(model_cpu(trainData.input[:, i]), trainData.output[:, i]) for i in 1:size(trainData.input, 2)]) / size(trainData.input, 2)
   @info "Initial loss: $(initialLoss)"
 
   for epoch in 1:nepochs
@@ -128,8 +137,8 @@ function trainSurrogate!(model_cpu,
       end
 
       model_cpu = Flux.cpu(model)
-      l_train = sum([lossFunc(model_cpu(trainData.input[:,i]), trainData.output[:,i]) for i in 1:size(trainData.input,2)]) / size(trainData.input,2)
-      l_test = sum([lossFunc(model_cpu(testData.input[:,i]), testData.output[:,i]) for i in 1:size(testData.input,2)]) / size(testData.input,2)
+      l_train = sum([lossFunc(model_cpu(trainData.input[:, i]), trainData.output[:, i]) for i in 1:size(trainData.input, 2)]) / size(trainData.input, 2)
+      l_test = sum([lossFunc(model_cpu(testData.input[:, i]), testData.output[:, i]) for i in 1:size(testData.input, 2)]) / size(testData.input, 2)
       @info "Epoch $(epoch): Train loss=$(l_train), Test loss=$(l_test)"
       push!(df_loss, [epoch, l_train, l_test])
       if l_train < losstol
@@ -141,8 +150,8 @@ function trainSurrogate!(model_cpu,
         Flux.Optimise.update!(opt, parameters, gradients)
       end
 
-      l_train = sum([lossFunc(model(trainData.input[:,i]), trainData.output[:,i]) for i in 1:size(trainData.input,2)]) / size(trainData.input,2)
-      l_test = sum([lossFunc(model(testData.input[:,i]), testData.output[:,i]) for i in 1:size(testData.input,2)]) / size(testData.input,2)
+      l_train = sum([lossFunc(model(trainData.input[:, i]), trainData.output[:, i]) for i in 1:size(trainData.input, 2)]) / size(trainData.input, 2)
+      l_test = sum([lossFunc(model(testData.input[:, i]), testData.output[:, i]) for i in 1:size(testData.input, 2)]) / size(testData.input, 2)
       @info "Epoch $(epoch): Train loss=$(l_train), Test loss=$(l_test)"
       push!(df_loss, [epoch, l_train, l_test])
       if l_train < losstol
@@ -159,14 +168,14 @@ end
 Train model on CSV data and export to ONNX.
 """
 function trainONNX(csvFile::String,
-                   onnxModel::String,
-                   inputNames::Array{String},
-                   outputNames::Array{String};
-                   lossFile::String="",
-                   filterFunc=nothing,
-                   model=nothing,
-                   losstol::Real=1e-6,
-                   nepochs=10)
+  onnxModel::String,
+  inputNames::Array{String},
+  outputNames::Array{String};
+  lossFile::String="",
+  filterFunc=nothing,
+  model=nothing,
+  losstol::Real=1e-6,
+  nepochs=10)
 
   data = readData(csvFile, inputNames, outputNames)
   nInputs = length(inputNames)
@@ -174,21 +183,21 @@ function trainONNX(csvFile::String,
 
   if filterFunc !== nothing
     data = Data(filterFunc(data.train.input, data.train.output),
-                filterFunc(data.test.input, data.test.output),
-                data.inputNames, data.outputNames)
+      filterFunc(data.test.input, data.test.output),
+      data.inputNames, data.outputNames)
   end
 
   if model === nothing
-  model = Flux.Chain(Flux.Dense(nInputs,     nInputs*10,  Flux.σ),
-                     Flux.Dense(nInputs*10,  nOutputs*10, tanh),
-                     Flux.Dense(nOutputs*10, nOutputs))
+    model = Flux.Chain(Flux.Dense(nInputs, nInputs * 10, Flux.σ),
+      Flux.Dense(nInputs * 10, nOutputs * 10, tanh),
+      Flux.Dense(nOutputs * 10, nOutputs))
   end
 
   model, df_loss = trainSurrogate!(model, data.train, data.test; losstol=losstol, nepochs=nepochs, useGPU=true)
 
   mkpath(dirname(onnxModel))
-  BSON.@save onnxModel*".bson" model
-  ONNXNaiveNASflux.save(onnxModel, model, (nInputs,1))
+  BSON.@save onnxModel * ".bson" model
+  ONNXNaiveNASflux.save(onnxModel, model, (nInputs, 1))
 
   if lossFile != ""
     CSV.write(lossFile, df_loss)
@@ -202,10 +211,10 @@ end
 Plot input agains outputs to visualize data.
 """
 function visualizeData(data::InOutData,
-                       inputNames::Array{String},
-                       outputNames::Array{String};
-                       inidx=nothing,
-                       outidx=nothing)
+  inputNames::Array{String},
+  outputNames::Array{String};
+  inidx=nothing,
+  outidx=nothing)
   if inidx === nothing
     inidx = 1:length(data.input[1])
   end
@@ -218,7 +227,7 @@ function visualizeData(data::InOutData,
 
   for i in inidx
     for j in outidx
-      plt = Plots.scatter(data.input[i,:], data.output[j,:], xlabel=inputNames[i], label=[outputNames[j]])
+      plt = Plots.scatter(data.input[i, :], data.output[j, :], xlabel=inputNames[i], label=[outputNames[j]])
       push!(p, plt)
     end
   end
@@ -230,13 +239,13 @@ end
 """
 Array of two inputs to plot against one output.
 """
-function visualizeData3D(data::InOutData, inputNames::Array{String}, outputNames::Array{String}, inidx::Array{Tuple{I,I}}, outidx) where I<:Integer
+function visualizeData3D(data::InOutData, inputNames::Array{String}, outputNames::Array{String}, inidx::Array{Tuple{I,I}}, outidx) where {I<:Integer}
   @assert length(inidx) == length(outidx) "Length of inidx not equal length of outidx"
   p = []
 
   for (out1, (in1, in2)) in enumerate(inidx)
     j = outidx[out1]
-    plt = Plots.scatter(data.input[in1,:], data.input[in2,:], data.output[j,:], xlabel=inputNames[in1], ylabel=inputNames[in2], zlabel=outputNames[j])
+    plt = Plots.scatter(data.input[in1, :], data.input[in2, :], data.output[j, :], xlabel=inputNames[in1], ylabel=inputNames[in2], zlabel=outputNames[j])
     push!(p, plt)
   end
 

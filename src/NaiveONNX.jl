@@ -12,7 +12,9 @@ import Plots
 import StatsBase
 
 include("main.jl")
+export prepareData
 export trainONNX
+export trainSurrogate!
 export visualizeData
 export visualizeData3D
 
