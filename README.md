@@ -7,6 +7,6 @@ Used in examples of https://github.com/AnHeuermann/NonLinearSystemNeuralNetworkF
 
 ## License
 
-(c) Andreas Heuermann 2022
+(c) Andreas Heuermann 2022, 2024
 
 NaiveONNX.jl is licensed under MIT license, see [LICENSE](./LICENSE).
