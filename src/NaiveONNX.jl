@@ -6,7 +6,6 @@ import CUDA
 import DataFrames
 import Flux
 import InvertedIndices
-import ONNX
 import ONNXNaiveNASflux
 import Plots
 import StatsBase
