@@ -18,3 +18,5 @@ The development is organized by
 [Hochschule Bielefeld – University of Applied Sciences and Arts, Faculty of Engineering and Mathematics][hsbi-link].
 
 Contributor need to sign a contributor license agreement.
+
+[hsbi-link]: https://www.hsbi.de/ium
