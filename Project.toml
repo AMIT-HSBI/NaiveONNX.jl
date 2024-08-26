@@ -1,6 +1,6 @@
 name = "NaiveONNX"
 uuid = "135c1d4d-7f3e-476b-9774-5f1a5fa3495d"
-authors = ["AnHeuermann <andreas.heuermann@fh-bielefeld.de>"]
+authors = ["AnHeuermann"]
 version = "0.2.1"
 
 [deps]
